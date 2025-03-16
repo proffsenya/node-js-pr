@@ -1,16 +1,30 @@
 [
   {
     "id": 0,
-    "name": "asd",
-    "price": "13",
-    "description": "sdf",
+    "name": "3ewrfgtdewdefg",
+    "price": "132435",
+    "description": "ewefd",
     "category": "electronics"
   },
   {
     "id": 1,
-    "name": "13",
-    "price": "13",
-    "description": "13",
+    "name": "3456",
+    "price": "345",
+    "description": "345",
+    "category": "clothing"
+  },
+  {
+    "id": 2,
+    "name": "3",
+    "price": "3",
+    "description": "3",
+    "category": "clothing"
+  },
+  {
+    "id": 3,
+    "name": "3",
+    "price": "3",
+    "description": "3",
     "category": "electronics"
   }
 ]

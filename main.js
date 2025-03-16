@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocketServer } from 'ws'; 
+import { graphqlHTTP } from 'express-graphql';
+import { buildSchema } from 'graphql';
 
 const app = express();
 const PORT = 3000;
@@ -10,6 +12,42 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, "data.json");
 const HTML_FILE = path.join(__dirname, "./pages/main.html");
+
+const schema = buildSchema(`
+    type Product {
+        name: String
+        price: Float
+        category: String
+    }
+
+    type Query {
+        products(category: String): [Product]
+    }
+`);
+
+const root = {
+    products: ({ category }) => {
+        try {
+            const data = fs.readFileSync(DATA_FILE, "utf8");
+            let products = JSON.parse(data);
+
+            if (category) {
+                products = products.filter(product => product.category === category);
+            }
+
+            return products.map(({ name, price, category }) => ({ name, price, category }));
+        } catch (error) {
+            console.error("Ошибка обработки GraphQL-запроса:", error);
+            return [];
+        }
+    }
+};
+
+app.use('/graphql', graphqlHTTP({
+    schema: schema,
+    rootValue: root,
+    graphiql: true
+}));
 
 app.use(express.static(__dirname));
 app.use(express.json());

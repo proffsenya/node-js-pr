@@ -76,18 +76,50 @@
     </div>
 
     <script>
-        document.getElementById("categoryFilter").addEventListener("change", function () {
-            const selectedCategory = this.value;
-            const products = document.querySelectorAll(".product");
+       async function fetchProducts(category = "") {
+    const query = `{
+        products(category: "${category}")
+        {
+            name
+            price
+        }
+    }`;
 
-            products.forEach(product => {
-                if (selectedCategory === "all" || product.dataset.category === selectedCategory) {
-                    product.style.display = "block";
-                } else {
-                    product.style.display = "none";
-                }
-            });
-        });
+    const response = await fetch('/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+    });
+
+    const result = await response.json();
+    return result.data.products;
+}
+
+async function renderProducts(category = "") {
+    const productList = document.getElementById('productList');
+    productList.innerHTML = '<p>Загрузка...</p>';
+
+    try {
+        const products = await fetchProducts(category);
+        productList.innerHTML = products.map(product => `
+            <div class="product">
+                <h3>${product.name}</h3>
+                <p>Цена: ${product.price} руб.</p>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки товаров:', error);
+        productList.innerHTML = '<p>Ошибка загрузки данных</p>';
+    }
+}
+
+// Обработчик изменения фильтра категории
+document.getElementById("categoryFilter").addEventListener("change", function () {
+    const selectedCategory = this.value === "all" ? "" : this.value;
+    renderProducts(selectedCategory);
+});
+
+document.addEventListener('DOMContentLoaded', () => renderProducts());
 
         // Подключаемся к WebSocket серверу
         const ws = new WebSocket('ws://localhost:8081');
