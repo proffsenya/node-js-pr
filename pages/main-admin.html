@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .product {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .admin-panel input, .admin-panel button, .admin-panel select {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+        .admin-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        .chat-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container admin-panel">
+        <h2>Админ-панель</h2>
+        <form id="myForm">
+            <input type="text" placeholder="Название товара" name="name" id="name" required>
+            <input type="number" placeholder="Цена товара" name="price" id="price" required>
+            <input type="text" placeholder="Описание товара" name="description" id="description" required>
+            <select id="category" required>
+                <option value="">Выберите категорию</option>
+                <option value="electronics">Электроника</option>
+                <option value="clothing">Одежда</option>
+            </select>
+            <button id="addproduct_button" type="submit">Добавить товар</button>
+        </form>       
+        
+        <input type="text" placeholder="ID товара" id="productId" required>
+        <input type="text" placeholder="Новое название" id="newName">
+        <input type="number" placeholder="Новая цена" id="newPrice">
+        <input type="text" placeholder="Новое описание" id="newDescription">
+        <select id="newCategory">
+            <option value="">Выберите новую категорию</option>
+            <option value="electronics">Электроника</option>
+            <option value="clothing">Одежда</option>
+        </select>
+        <button id="updateProductButton">Изменить товар</button>
+        <button id="deleteProductButton">Удалить товар</button>
+    </div>
+
+    <div class="container chat-container">
+        <h2>Чат</h2>
+        <div id="chat"></div>
+        <input type="text" id="user" placeholder="Ваше имя">
+        <input type="text" id="message" placeholder="Ваше сообщение">
+        <button id="sendButton">Отправить</button>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8081');
+
+// Обработка открытия соединения
+ws.onopen = () => {
+    console.log('Подключение к WebSocket установлено');
+};
+
+// Обработка входящих сообщений
+ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    console.log('Получено сообщение:', message);
+
+    // Добавляем сообщение в чат
+    const chat = document.getElementById('chat');
+    const messageElement = document.createElement('div');
+    messageElement.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
+    chat.appendChild(messageElement);
+
+    // Прокручиваем чат вниз, чтобы показать новое сообщение
+    chat.scrollTop = chat.scrollHeight;
+};
+
+// Обработка ошибок
+ws.onerror = (error) => {
+    console.error('Ошибка WebSocket:', error);
+};
+
+// Обработка закрытия соединения
+ws.onclose = () => {
+    console.log('WebSocket соединение закрыто');
+};
+
+// Отправка сообщения
+document.getElementById('sendButton').addEventListener('click', () => {
+    const user = document.getElementById('user').value;
+    const text = document.getElementById('message').value;
+
+    if (user && text) {
+        ws.send(JSON.stringify({ user, text }));
+    } else {
+        alert('Введите имя и сообщение!');
+    }
+});
+
+        document.getElementById("myForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const name = document.getElementById("name").value.trim();
+            const price = document.getElementById("price").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const category = document.getElementById("category").value;
+
+            if (!name || !price || !description || !category) {
+                alert("Заполните все поля!");
+                return;
+            }
+
+            try {
+                const response = await fetch("/admin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, price, description, category })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error("Ошибка при отправке данных:", error);
+                alert("Ошибка отправки данных!");
+            }
+        });
+
+        document.getElementById("updateProductButton").addEventListener("click", async () => {
+            const id = document.getElementById("productId").value.trim();
+            const name = document.getElementById("newName").value.trim();
+            const price = document.getElementById("newPrice").value.trim();
+            const description = document.getElementById("newDescription").value.trim();
+            const category = document.getElementById("newCategory").value;
+
+            if (!id || (!name && !price && !description && !category)) {
+                alert("Введите ID и хотя бы одно поле для изменения!");
+                return;
+            }
+
+            const updatedData = {};
+            if (name) updatedData.name = name;
+            if (price) updatedData.price = price;
+            if (description) updatedData.description = description;
+            if (category) updatedData.category = category;
+
+            try {
+                const response = await fetch(`/admin/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error("Ошибка обновления:", error);
+                alert("Ошибка обновления!");
+            }
+        });
+
+        document.getElementById("deleteProductButton").addEventListener("click", async () => {
+            const id = document.getElementById("productId").value.trim();
+            if (!id) {
+                alert("Введите ID товара для удаления!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/${id}`, { method: "DELETE" });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error("Ошибка удаления:", error);
+                alert("Ошибка удаления!");
+            }
+        });
+    </script>
+</body>
+</html>

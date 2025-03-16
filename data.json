@@ -1,0 +1,16 @@
+[
+  {
+    "id": 0,
+    "name": "asd",
+    "price": "13",
+    "description": "sdf",
+    "category": "electronics"
+  },
+  {
+    "id": 1,
+    "name": "13",
+    "price": "13",
+    "description": "13",
+    "category": "electronics"
+  }
+]

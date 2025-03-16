@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товары</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .chat-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        #chat {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .product-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .product {
+            border: 1px solid #ddd;
+            padding: 15px;
+            background: #fff;
+            width: 200px;
+            text-align: center;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Список товаров</h2>
+
+        <div class="filter-container">
+            <label for="categoryFilter">Фильтр по категории:</label>
+            <select id="categoryFilter">
+                <option value="all">Все категории</option>
+                {{{categories}}}
+            </select>
+        </div>
+
+        <div class="product-list" id="productList">
+            {{{products}}}
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div id="chat"></div>
+        <input type="text" id="user" placeholder="Ваше имя">
+        <input type="text" id="message" placeholder="Ваше сообщение">
+        <button id="sendButton">Отправить</button>
+    </div>
+
+    <script>
+        document.getElementById("categoryFilter").addEventListener("change", function () {
+            const selectedCategory = this.value;
+            const products = document.querySelectorAll(".product");
+
+            products.forEach(product => {
+                if (selectedCategory === "all" || product.dataset.category === selectedCategory) {
+                    product.style.display = "block";
+                } else {
+                    product.style.display = "none";
+                }
+            });
+        });
+
+        // Подключаемся к WebSocket серверу
+        const ws = new WebSocket('ws://localhost:8081');
+
+        // Обработка открытия соединения
+        ws.onopen = () => {
+            console.log('Подключение к WebSocket установлено');
+        };
+
+        // Обработка входящих сообщений
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            console.log('Получено сообщение:', message);
+
+            // Добавляем сообщение в чат
+            const chat = document.getElementById('chat');
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
+            chat.appendChild(messageElement);
+
+            // Прокручиваем чат вниз, чтобы показать новое сообщение
+            chat.scrollTop = chat.scrollHeight;
+        };
+
+        // Обработка ошибок
+        ws.onerror = (error) => {
+            console.error('Ошибка WebSocket:', error);
+        };
+
+        // Обработка закрытия соединения
+        ws.onclose = () => {
+            console.log('WebSocket соединение закрыто');
+        };
+
+        // Отправка сообщения
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const user = document.getElementById('user').value;
+            const text = document.getElementById('message').value;
+
+            if (user && text) {
+                ws.send(JSON.stringify({ user, text }));
+            } else {
+                alert('Введите имя и сообщение!');
+            }
+        });
+    </script>
+</body>
+</html>
