@@ -11,6 +11,6 @@ npm run main
 ## 1. Запуск Backend
 ```sh
 new terminal
-node run admin
+npm run admin
 ```
 ## API будет доступно по адресу: http://localhost:8080/admin
